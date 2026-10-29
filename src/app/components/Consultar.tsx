@@ -1,19 +1,6 @@
-
-import {
-    collection,
-    deleteDoc,
-    doc,
-    getDocs
-} from "firebase/firestore";
+import { collection, deleteDoc, doc, getDocs, orderBy, query } from "firebase/firestore";
 import { useEffect, useState } from "react";
-import {
-    Alert,
-    FlatList,
-    Pressable,
-    StyleSheet,
-    Text,
-    View
-} from "react-native";
+import { Alert, FlatList, Pressable, StyleSheet, Text, View } from "react-native";
 import { db } from "../../../firebaseConfig";
 
 type Filme = {
@@ -32,12 +19,18 @@ type Props = {
 export default function Consultar({ onVoltar }: Props) {
   const [filmes, setFilmes] = useState<Filme[]>([]);
   const [carregando, setCarregando] = useState(true);
+  const [ordenacao, setOrdenacao] = useState('nome');
 
   async function consultar() {
     try {
       setCarregando(true);
 
-      const querySnapshot = await getDocs(collection(db, 'filmes'));
+      const consulta = query(
+        collection(db, 'filmes'),
+        orderBy(ordenacao, 'asc')
+      );
+
+      const querySnapshot = await getDocs(consulta);
 
       const lista = querySnapshot.docs.map((documento) => {
         const dados = documento.data();
@@ -62,7 +55,7 @@ export default function Consultar({ onVoltar }: Props) {
 
   useEffect(() => {
     consultar();
-  }, []);
+  }, [ordenacao]);
 
   function confirmarExclusao(id: string) {
     Alert.alert(
@@ -95,6 +88,24 @@ export default function Consultar({ onVoltar }: Props) {
   return (
     <View style={styles.container}>
       <Text style={styles.titulo}>Filmes Cadastrados</Text>
+
+      <Text>Ordenar por:</Text>
+
+      <View style={styles.opcoes}>
+        <Pressable
+          style={styles.botaoOrdenar}
+          onPress={() => setOrdenacao('nome')}
+        >
+          <Text style={styles.textoBotao}>Nome (A-Z)</Text>
+        </Pressable>
+
+        <Pressable
+          style={styles.botaoOrdenar}
+          onPress={() => setOrdenacao('anoLancamento')}
+        >
+          <Text style={styles.textoBotao}>Ano</Text>
+        </Pressable>
+      </View>
 
       {carregando ? (
         <Text style={styles.mensagem}>Carregando filmes...</Text>
@@ -150,6 +161,18 @@ const styles = StyleSheet.create({
     textAlign: "center",
     marginBottom: 20,
     marginTop: 30,
+  },
+  opcoes: {
+    flexDirection: "row",
+    marginVertical: 15,
+    gap: 10,
+  },
+  botaoOrdenar: {
+    backgroundColor: "blue",
+    padding: 12,
+    borderRadius: 5,
+    flex: 1,
+    alignItems: "center",
   },
   card: {
     borderWidth: 1,
